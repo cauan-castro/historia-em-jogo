@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>História em Quadrinhos - 4 Cenas com Home</title>
+    <style>
+        /* =========================================
+           RESET E ESTILOS GERAIS
+           ========================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            width: 100vw;
+            padding: 20px;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* =========================================
+           CONTAINER PRINCIPAL (Responsivo)
+           ========================================= */
+        .comic-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            max-height: 85vh;
+            aspect-ratio: 16 / 9;
+            border: 6px solid #000000;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 3px #ffffff;
+            overflow: hidden;
+            background-color: #000;
+            border-radius: 4px;
+        }
+
+        /* =========================================
+           ESTRUTURA DE CENAS (PAINÉIS)
+           ========================================= */
+        .comic-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease-in-out;
+            z-index: 1;
+        }
+
+        .comic-panel.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* =========================================
+           EFEITO DA IMAGEM E MOVIMENTO CONTÍNUO
+           ========================================= */
+        .image-wrapper {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .comic-img {
+            width: 115%;
+            height: 115%;
+            object-fit: cover;
+            position: absolute;
+            left: -7.5%;
+            top: -7.5%;
+        }
+
+        .active .comic-img {
+            animation: continuousPan 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes continuousPan {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.1) translate(-3%, -2%); }
+        }
+
+        .vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        /* =========================================
+           CAIXA DE DIÁLOGO BASE
+           ========================================= */
+        .narrative-box {
+            position: absolute;
+            bottom: 5%;
+            left: 5%;
+            width: 58%;
+            max-height: 45%; 
+            display: flex;
+            flex-direction: column;
+            
+            background-color: #fffde7;
+            color: #111111;
+            border: 4px solid #000000;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+            font-weight: bold;
+            line-height: 1.5;
+            box-shadow: 8px 8px 0px #000000;
+            transform: skew(-2deg);
+            z-index: 4;
+            
+            /* O overflow fica visível na caixa principal para o título não ser cortado */
+            overflow: visible; 
+            
+            opacity: 0;
+            transform: translateY(20px) skew(-2deg);
+        }
+
+        /* =========================================
+           ÁREA DE TEXTO COM ROLAGEM
+           ========================================= */
+        .text-scroll {
+            /* O scroll acontece apenas aqui dentro */
+            overflow-y: auto;
+            padding: clamp(10px, 2vw, 18px) clamp(12px, 2.5vw, 22px);
+        }
+
+        /* Estilo da barra de rolagem */
+        .text-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .text-scroll::-webkit-scrollbar-thumb {
+            background: #000000;
+            border-radius: 3px;
+        }
+        .text-scroll::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .active .narrative-box {
+            animation: introduceText 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s forwards;
+        }
+
+        @keyframes introduceText {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) skew(-2deg);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) skew(-2deg);
+            }
+        }
+
+        /* =========================================
+           TÍTULO / ETIQUETA (AGORA CORRIGIDO)
+           ========================================= */
+        .tag-contexto {
+            position: absolute;
+            top: clamp(-20px, -2vw, -16px); 
+            left: 15px;
+            background-color: #e64a19;
+            color: #ffffff;
+            border: 3px solid #000000;
+            padding: clamp(2px, 0.5vw, 4px) clamp(8px, 1.5vw, 15px);
+            font-size: clamp(0.6rem, 1.2vw, 0.95rem); 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transform: skew(4deg);
+            box-shadow: 4px 4px 0px #000000;
+            z-index: 10; /* Garante que fique por cima de tudo */
+        }
+
+        .narrative-text {
+            font-size: clamp(0.7rem, 1.8vw, 1.2rem);
+            margin: 0;
+        }
+
+        /* =========================================
+           BOTÕES DE NAVEGAÇÃO
+           ========================================= */
+        .nav-controls {
+            position: absolute;
+            bottom: 5%;
+            right: 5%;
+            z-index: 5;
+            display: flex;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            background-color: #ffeb3b;
+            color: #000000;
+            border: 3px solid #000000;
+            padding: 10px 18px;
+            font-family: 'Comic Sans MS', sans-serif;
+            font-weight: bold;
+            font-size: clamp(0.8rem, 1.3vw, 1rem);
+            cursor: pointer;
+            box-shadow: 4px 4px 0px #000000;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+        }
+
+        .nav-btn:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: 7px 7px 0px #000000;
+            background-color: #ffffff;
+        }
+
+        .nav-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000000;
+        }
+
+        .nav-btn:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+            transform: translate(0, 0);
+            box-shadow: 4px 4px 0px #666666;
+        }
+
+        /* =========================================
+           BOTÃO HOME
+           ========================================= */
+        .home-btn {
+            position: absolute;
+            top: 4%;
+            right: 4%;
+            z-index: 10;
+            background-color: #ffffff;
+            color: #000000;
+            border: 2px solid #000000;
+            padding: 6px 12px;
+            font-family: 'Comic Sans MS', sans-serif;
+            font-weight: bold;
+            font-size: clamp(0.75rem, 1.2vw, 0.85rem);
+            text-decoration: none;
+            text-transform: uppercase;
+            box-shadow: 3px 3px 0px #000000;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .home-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #000000;
+            background-color: #ffeb3b;
+        }
+
+        .home-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px #000000;
+        }
+
+        /* =========================================
+           RESPONSIVIDADE (CELULARES)
+           ========================================= */
+        @media (max-width: 768px) {
+            .narrative-box {
+                width: 90%;
+                left: 5%;
+                bottom: 18%; 
+                border-width: 3px; 
+            }
+            .text-scroll {
+                padding: 12px 15px; /* Ajuste do padding para celular */
+            }
+            .nav-controls {
+                width: 90%;
+                left: 5%;
+                right: 5%;
+                justify-content: space-between;
+                bottom: 4%;
+            }
+            .nav-btn {
+                padding: 8px 14px;
+                font-size: 0.8rem;
+            }
+            .home-btn {
+                top: 4%;
+                right: 4%;
+                padding: 5px 10px;
+            }
+            .Btn-legenda {
+               display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="comic-container" id="comic-container">
+        
+        <a href="index.html" class="home-btn">🏠 Home</a>
+
+        <div class="comic-panel active">
+            <div class="image-wrapper">
+                <img src="cena1.png" alt="Cena 1" class="comic-img">
+                <div class="vignette"></div>
+            </div>
+            <div class="narrative-box">
+                <div class="tag-contexto">Brasil, 1º de maio de 1500</div>
+                <div class="text-scroll">
+                    <p class="narrative-text">
+                        No dia 1º de maio, um navio de mantimentos comandado por Gaspar de Lemos retorna a Portugal. Ele leva a carta de Caminha, além de amostras da terra (araras, papagaios e arcos indígenas) para anunciar a descoberta ao Rei.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="comic-panel">
+            <div class="image-wrapper">
+                <img src="cena2.png" alt="Cena 2" class="comic-img">
+                <div class="vignette"></div>
+            </div>
+            <div class="narrative-box">
+                <div class="tag-contexto">No dia seguinte</div>
+                <div class="text-scroll">
+                    <p class="narrative-text">
+                       O restante da esquadra de Cabral levanta âncora e parte do Brasil, retomando a rota original em direção às Índias para buscar as desejadas especiarias.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="comic-panel">
+            <div class="image-wrapper">
+                <img src="cena3.png" alt="Cena 3" class="comic-img">
+                <div class="vignette"></div>
+            </div>
+            <div class="narrative-box">
+                <div class="tag-contexto">A chegada</div>
+                <div class="text-scroll">
+                    <p class="narrative-text">
+                        Meses depois, a chegada de Gaspar de Lemos a Lisboa desperta o interesse da Coroa. D. Manuel I percebe a necessidade urgente de enviar novos navios para mapear e entender a dimensão dessa "Ilha de Vera Cruz".
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="comic-panel">
+            <div class="image-wrapper">
+                <img src="cena4.png" alt="Cena 4" class="comic-img">
+                <div class="vignette"></div>
+            </div>
+            <div class="narrative-box">
+                <div class="tag-contexto">A ordem do Rei</div>
+                <div class="text-scroll">
+                    <p class="narrative-text">
+                        O Rei ordena que a descoberta seja mantida em sigilo perante outras nações, mas já inicia os preparativos para uma nova frota exploratória. Ele sabe que a terra tem potencial estratégico para o controle das rotas no Atlântico Sul.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-controls">
+            <button class="nav-btn" id="returnBtn" disabled>
+                <span class="seta">←</span><span class="Btn-legenda">Anterior</span>
+            </button>
+            <button class="nav-btn" id="nextBtn">
+                <span class="Btn-legenda">Próximo</span><span class="seta">→</span> 
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const panels = document.querySelectorAll('.comic-panel');
+        const returnBtn = document.getElementById('returnBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        let currentIndex = 0;
+
+        const DESTINATION_URL = 'exploracao-brasil.html'; 
+
+        function updatePanels() {
+            // Alterna a classe ativa
+            panels.forEach(panel => panel.classList.remove('active'));
+            panels[currentIndex].classList.add('active');
+
+            // Desabilita e esconde o botão anterior
+            returnBtn.disabled = currentIndex === 0;
+            returnBtn.style.display = currentIndex === 0 ? 'none' : 'inline-flex';
+
+            // Botão dinâmico em diferentes telas
+            const nextLegenda = nextBtn.querySelector('.Btn-legenda');
+            const nextSeta = nextBtn.querySelector('.seta');
+
+            // Gerencia botão próximo / Ir para o minigame
+            if (currentIndex === panels.length - 1) {
+                nextLegenda.textContent = 'Ir para o minigame';
+                nextSeta.textContent = '🎮';
+                nextBtn.style.backgroundColor = '#4caf50'; // Verde para indicar conclusão
+                nextBtn.style.color = '#ffffff';
+            } else {
+                nextLegenda.textContent = 'Próximo';
+                nextSeta.textContent = '→';
+                nextBtn.style.backgroundColor = '#ffeb3b'; // Amarelo padrão
+                nextBtn.style.color = '#000000';
+            }
+        }
+
+        //Avança para o próximo quadro
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < panels.length - 1) {
+                currentIndex++;
+                updatePanels();
+            } else {
+                window.location.href = DESTINATION_URL;
+            }
+        });
+
+        //Retorna para o quadro anterior
+        returnBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updatePanels();
+            }
+        });
+        
+        // Inicialização
+        updatePanels();
+    </script>
+</body>
+</html>
