@@ -30,23 +30,35 @@
 <body>
   <div id="comic-container"></div>
 
-  <script type="module">
-    import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@4.0.0/+esm';
-    import MenuScene from './MenuScene.js';
-    import { TutorialScene, GameScene } from './TutorialScene.js';
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <script src="./MenuScene.js"></script>
+  <script src="./TutorialScene.js"></script>
+  <script>
+    if (typeof window.GameScene === 'undefined') {
+      window.GameScene = class extends Phaser.Scene {
+        constructor() {
+          super({ key: 'GameScene' });
+        }
+        create() {
+          this.add.text(20, 20, 'Cena do Jogo Principal');
+        }
+      };
+    }
 
     const config = {
       type: Phaser.AUTO,
       width: 1200,
       height: 675,
       parent: 'comic-container',
-      dom: { createContainer: true },
+      dom: {
+        createContainer: true
+      },
       backgroundColor: '#0b1020',
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
       },
-      scene: [MenuScene, TutorialScene, GameScene]
+      scene: [window.MenuScene, window.TutorialScene, window.GameScene]
     };
 
     new Phaser.Game(config);

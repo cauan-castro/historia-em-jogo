@@ -60,20 +60,27 @@ class MenuScene extends Phaser.Scene {
   createMenuButtons() {
     // O HTML injetado no Phaser usa as classes do CSS externo para manter a identidade visual "comic book".
     const html = `
-      <div style="position:absolute; left:4%; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:12px; z-index:8; pointer-events:auto;">
-        <button id="start-btn" class="nav-btn" type="button">Iniciar expedição</button>
+      <div style="position:absolute; left:2%; top:48%; transform:translateY(-50%); display:flex; flex-direction:column; align-items:flex-start; gap:10px; z-index:8; pointer-events:auto;">
+        <button id="start-btn" class="nav-btn" type="button" style="margin-bottom:2px;">Iniciar expedição</button>
         <button id="story-btn" class="nav-btn" type="button">Voltar à história anterior</button>
-        <button id="home-btn" class="home-btn" type="button">Home</button>
+        <button id="home-btn" class="home-btn" type="button" style="margin-top:2px;">Home</button>
       </div>`;
 
     const domElement = this.add.dom(0, 0).createFromHTML(html);
     domElement.setOrigin(0, 0);
     domElement.setPosition(0, 0);
-    domElement.setSize(this.scale.width, this.scale.height);
 
-    const startBtn = domElement.node.querySelector('#start-btn');
-    const storyBtn = domElement.node.querySelector('#story-btn');
-    const homeBtn = domElement.node.querySelector('#home-btn');
+    const domNode = domElement.node;
+    domNode.style.position = 'absolute';
+    domNode.style.left = '0px';
+    domNode.style.top = '0px';
+    domNode.style.width = `${this.scale.width}px`;
+    domNode.style.height = `${this.scale.height}px`;
+    domNode.style.pointerEvents = 'auto';
+
+    const startBtn = domNode.querySelector('#start-btn');
+    const storyBtn = domNode.querySelector('#story-btn');
+    const homeBtn = domNode.querySelector('#home-btn');
 
     startBtn.addEventListener('click', () => this.startExpedition());
     storyBtn.addEventListener('click', () => {

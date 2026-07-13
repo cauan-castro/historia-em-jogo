@@ -1,6 +1,4 @@
-import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@4.0.0/+esm';
-
-export class TutorialScene extends Phaser.Scene {
+class TutorialScene extends Phaser.Scene {
   constructor() {
     super({ key: 'TutorialScene' });
   }
@@ -28,17 +26,16 @@ export class TutorialScene extends Phaser.Scene {
       strokeThickness: 4
     }).setOrigin(0.5);
 
-    // A caixa de narrativa e o botão de ação são montados com DOM do Phaser, aproveitando as classes .narrative-box, .tag-contexto e .nav-btn do CSS.
     const html = `
       <div style="position:absolute; left:5%; bottom:5%; width:min(72%, 770px); display:flex; flex-direction:column; gap:14px; pointer-events:auto;">
         <div class="narrative-box" style="position:relative; width:100%; min-height:240px;">
           <div class="tag-contexto">Tutorial</div>
           <div class="text-scroll">
             <p class="narrative-text">
-              1. Clique com o dedo ou o mouse no botão desenhar para desenhar o mapa.<br>
-              2. Desvie da pedras que aparecerão usando o timão da caravela.<br>
-              3. Quando todos os mapas estiverem 100% desenhado você ganha.<br>
-              4. Ao final você verá o mapa que você desenhou.
+              1. Observe o mapa e o vento antes de decidir o rumo.<br>
+              2. Acompanhe os sinais da costa para evitar correntes perigosas.<br>
+              3. Use o tempo certo para manobrar e preservar os suprimentos.<br>
+              4. Conquiste o litoral e avance em direção ao próximo desafio.
             </p>
           </div>
         </div>
@@ -48,9 +45,16 @@ export class TutorialScene extends Phaser.Scene {
     const domElement = this.add.dom(0, 0).createFromHTML(html);
     domElement.setOrigin(0, 0);
     domElement.setPosition(0, 0);
-    domElement.setSize(this.scale.width, this.scale.height);
 
-    const playButton = domElement.node.querySelector('#play-btn');
+    const domNode = domElement.node;
+    domNode.style.position = 'absolute';
+    domNode.style.left = '0px';
+    domNode.style.top = '0px';
+    domNode.style.width = `${this.scale.width}px`;
+    domNode.style.height = `${this.scale.height}px`;
+    domNode.style.pointerEvents = 'auto';
+
+    const playButton = domNode.querySelector('#play-btn');
     playButton.addEventListener('click', () => {
       this.cameras.main.fadeOut(600, 0, 0, 0);
       this.time.delayedCall(650, () => {
@@ -60,7 +64,7 @@ export class TutorialScene extends Phaser.Scene {
   }
 }
 
-export class GameScene extends Phaser.Scene {
+class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -76,3 +80,6 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
   }
 }
+
+window.TutorialScene = TutorialScene;
+window.GameScene = GameScene;

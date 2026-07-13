@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>História em Quadrinhos - 4 Cenas com Home</title>
-    <style rel="stylesheet" href="style.css"></style>
 </head>
 <body>
 
@@ -14,7 +13,7 @@
 
         <div class="comic-panel active">
             <div class="image-wrapper">
-                <img src="cena1.png" alt="Cena 1" class="comic-img">
+                <img src="/assets/cena1.png" alt="Cena 1" class="comic-img">
                 <div class="vignette"></div>
             </div>
             <div class="narrative-box">
@@ -29,7 +28,7 @@
 
         <div class="comic-panel">
             <div class="image-wrapper">
-                <img src="cena2.png" alt="Cena 2" class="comic-img">
+                <img src="/assets/cena2.png" alt="Cena 2" class="comic-img">
                 <div class="vignette"></div>
             </div>
             <div class="narrative-box">
@@ -44,7 +43,7 @@
 
         <div class="comic-panel">
             <div class="image-wrapper">
-                <img src="cena3.png" alt="Cena 3" class="comic-img">
+                <img src="/assets/cena3.png" alt="Cena 3" class="comic-img">
                 <div class="vignette"></div>
             </div>
             <div class="narrative-box">
@@ -59,7 +58,7 @@
 
         <div class="comic-panel">
             <div class="image-wrapper">
-                <img src="cena4.png" alt="Cena 4" class="comic-img">
+                <img src="/assets/cena4.png" alt="Cena 4" class="comic-img">
                 <div class="vignette"></div>
             </div>
             <div class="narrative-box">
@@ -82,8 +81,21 @@
         </div>
 
     </div>
-
     <script>
+        //Carrega o css, permitindo o mudança dinâmica no js
+        function carregarCss(href) {
+            const existente = document.querySelector(`link[href="${href}"]`);
+            if (existente) return existente;
+
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            document.head.appendChild(link);
+            return link;
+        }
+        const estilo = carregarCss('style.css');
+        console.log('css careegado', estilo.href)
+
         const panels = document.querySelectorAll('.comic-panel');
         const returnBtn = document.getElementById('returnBtn');
         const nextBtn = document.getElementById('nextBtn');
