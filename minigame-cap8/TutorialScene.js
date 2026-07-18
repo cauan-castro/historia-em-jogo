@@ -81,22 +81,4 @@ class TutorialScene extends Phaser.Scene {
   }
 }
 
-class GameScene extends Phaser.Scene {
-  constructor() {
-    super({ key: 'GameScene' });
-  }
-
-  create() {
-    this.cameras.main.setBackgroundColor('#111111');
-    this.add.text(this.scale.width * 0.5, this.scale.height * 0.5, 'Cena principal em integração', {
-      fontFamily: 'Comic Sans MS, Chalkboard SE, sans-serif',
-      fontSize: '34px',
-      color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 6
-    }).setOrigin(0.5);
-  }
-}
-
 window.TutorialScene = TutorialScene;
-window.GameScene = GameScene;
