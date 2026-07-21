@@ -5,9 +5,9 @@ class MenuScene extends Phaser.Scene {
 
   preload() {
     // carrega a imagem de fundo da cena do menu
-    this.load.image('menuBg', '../assets/cenas/cena-menu-cap8.jpeg');
+    this.load.image('menuBg', '../assets/cenas/backgroud-menu(cap-8).png');
     // carrega imagem da caravela que ficará no canto inferior direito
-    this.load.image('caravela', '../assets/sprites/caravela.jpeg');
+    this.load.image('caravela', '../assets/sprites/caravela.png');
   }
 
   create() {
@@ -20,8 +20,8 @@ class MenuScene extends Phaser.Scene {
     bg.setDepth(-1);
 
     // adiciona uma caravela centralizada na parte inferior
-    this.caravela = this.add.image(this.scale.width * 0.5, this.scale.height + 14, 'caravela').setOrigin(0.5, 1);
-    this.caravela.setDisplaySize(198, 99);
+    this.caravela = this.add.image(this.scale.width * 0.65, this.scale.height + 20, 'caravela').setOrigin(0.5, 1);
+    this.caravela.setDisplaySize(450, 350);
     // garantir que fique acima do background
     this.caravela.setDepth(0);
 
