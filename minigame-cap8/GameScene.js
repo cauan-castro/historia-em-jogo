@@ -120,15 +120,38 @@ class GameScene extends Phaser.Scene {
   // =========================================================
   // NÉVOA — mantida como camada invisível para preservar a lógica do jogo
   // =========================================================
+  // =========================================================
+  // NÉVOA — (SISTEMA DE TILES BASEADO NA SUA GRADE)
+  // =========================================================
   createFog() {
-    this.fogOverlay = this.add.rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0)
-      .setOrigin(0, 0)
-      .setDepth(50)
-      .setScrollFactor(0);
-  }
+    // 1. Inicializa a matemática da grade AQUI (antes de dar problema)
+    this.cols = Math.ceil(this.mapW / this.cfg.cellSize);
+    this.rows = Math.ceil(this.mapH / this.cfg.cellSize);
+    
+    // Array lógico (o seu original) e o Novo Array Visual
+    this.revealedGrid = new Array(this.cols * this.rows).fill(false);
+    this.fogTiles = new Array(this.cols * this.rows); 
+    
+    this.revealedCount = 0;
+    this.totalCells = this.cols * this.rows;
 
+    // 2. Cria os "quadradinhos" pretos cobrindo o mapa
+    for (let cy = 0; cy < this.rows; cy++) {
+      for (let cx = 0; cx < this.cols; cx++) {
+        const idx = cy * this.cols + cx;
+        const x = cx * this.cfg.cellSize;
+        const y = cy * this.cfg.cellSize;
+
+        // Cria um retângulo preto opaco para cada célula
+        const tile = this.add.rectangle(x, y, this.cfg.cellSize, this.cfg.cellSize, 0x000000, 1);
+        tile.setOrigin(0, 0);
+        tile.setDepth(50); // Fica acima do chão, mas abaixo do jogador (depth 60)
+        
+        this.fogTiles[idx] = tile;
+      }
+    }
+  }
   revealAt(x, y) {
-    // lógica: marca células da grade dentro do raio como reveladas
     const r = this.cfg.revealRadius;
     const minCx = Math.max(0, Math.floor((x - r) / this.cfg.cellSize));
     const maxCx = Math.min(this.cols - 1, Math.floor((x + r) / this.cfg.cellSize));
@@ -138,17 +161,32 @@ class GameScene extends Phaser.Scene {
     for (let cy = minCy; cy <= maxCy; cy++) {
       for (let cx = minCx; cx <= maxCx; cx++) {
         const idx = cy * this.cols + cx;
+        
+        // Se a célula já foi revelada, ignora e pula para a próxima
         if (this.revealedGrid[idx]) continue;
+        
         const centerX = cx * this.cfg.cellSize + this.cfg.cellSize / 2;
         const centerY = cy * this.cfg.cellSize + this.cfg.cellSize / 2;
+        
         if (Phaser.Math.Distance.Between(centerX, centerY, x, y) <= r) {
+          
+          // Lógica original: marca na memória que foi revelado
           this.revealedGrid[idx] = true;
           this.revealedCount++;
+          
+          // LÓGICA VISUAL: Desaparece com o retângulo preto da tela
+          if (this.fogTiles && this.fogTiles[idx]) {
+             // O Tween dá um efeito de fade out suave de 300 milissegundos
+             this.tweens.add({
+               targets: this.fogTiles[idx],
+               alpha: 0,
+               duration: 300
+             });
+          }
         }
       }
     }
   }
-
   // =========================================================
   // JOGADOR (explorador português)
   // =========================================================
