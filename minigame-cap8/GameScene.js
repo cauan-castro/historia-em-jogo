@@ -13,7 +13,16 @@ class GameScene extends Phaser.Scene {
       revealRadius: 95,      // raio (px) de névoa dissipada ao redor do jogador
       winPercent: 75,        // % do mapa que precisa ser revelado para vencer
       poiCount: 16,          // quantidade de pontos de interesse (riquezas/fauna/flora)
-      poiDiscoverRadius: 70  // distância para um ponto de interesse ser "descoberto"
+      poiDiscoverRadius: 70, // distância para um ponto de interesse ser "descoberto"
+
+      // --- Fauna Oculta e Alerta de Perigo (Re-fogging) ---
+      faunaCountMin: 3,          // quantidade mínima de animais ocultos
+      faunaCountMax: 5,          // quantidade máxima de animais ocultos
+      faunaMinSpawnDist: 180,    // distância mínima do ponto de desembarque do jogador
+      faunaWarningRadius: 120,   // raio (px) em que a "pista" de perigo aparece
+      faunaCollisionRadius: 40,  // raio (px) em que a emboscada é acionada
+      faunaRefogRadius: 130,     // raio (px) da área que volta a ficar coberta pela névoa
+      faunaWarningCooldown: 1500 // intervalo (ms) entre pistas repetidas do mesmo animal
     };
 
     this.mapW = this.scale.width;
@@ -28,39 +37,40 @@ class GameScene extends Phaser.Scene {
     this.spawnPois();
     this.createFog();
     this.createPlayer();
+    this.spawnHiddenFauna();
     this.createHud();
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys('W,S,A,D');
 
-    // grade lógica de revelação (não é desenhada — só serve para calcular % e vitória)
+    // Grade lógica de revelação (calcula % e vitória)
     this.cols = Math.ceil(this.mapW / this.cfg.cellSize);
     this.rows = Math.ceil(this.mapH / this.cfg.cellSize);
     this.revealedGrid = new Array(this.cols * this.rows).fill(false);
     this.revealedCount = 0;
     this.totalCells = this.cols * this.rows;
 
-    // revela a área do desembarque assim que a fase começa
+    // Revela a área do desembarque assim que a fase começa
     this.revealAt(this.player.x, this.player.y);
     this.lastRevealX = this.player.x;
     this.lastRevealY = this.player.y;
   }
 
   // =========================================================
-  // TERRENO (visual estático, no estilo comic book do jogo)
+  // TERRENO (visual estático)
   // =========================================================
   drawTerrain() {
     const g = this.add.graphics().setDepth(0);
 
-    // base: mata / terreno
+    // Base: mata / terreno
     g.fillStyle(0x2d5b4c, 1);
     g.fillRect(0, 0, this.mapW, this.mapH);
 
-    // faixa de costa (mar -> areia) à esquerda, ponto de desembarque
+    // Faixa de costa (mar -> areia) à esquerda
     g.fillGradientStyle(0x6fa8dc, 0xc9b27a, 0x6fa8dc, 0xc9b27a, 1);
     g.fillRect(0, 0, this.mapW * 0.12, this.mapH);
 
-    // manchas de floresta mais densa
+    // Manchas de floresta mais densa
     g.fillStyle(0x1f4a34, 1);
     for (let i = 0; i < 22; i++) {
       const x = this.mapW * 0.16 + Math.random() * this.mapW * 0.8;
@@ -69,7 +79,7 @@ class GameScene extends Phaser.Scene {
       g.fillCircle(x, y, r);
     }
 
-    // rio serpenteante
+    // Rio serpenteante
     g.lineStyle(12, 0x2f6b8a, 1);
     g.beginPath();
     g.moveTo(this.mapW * 0.32, 0);
@@ -78,7 +88,7 @@ class GameScene extends Phaser.Scene {
     }
     g.strokePath();
 
-    // clareiras mais claras
+    // Clareiras mais claras
     g.fillStyle(0xe8d9a0, 0.3);
     for (let i = 0; i < 9; i++) {
       const x = this.mapW * 0.16 + Math.random() * this.mapW * 0.8;
@@ -107,7 +117,6 @@ class GameScene extends Phaser.Scene {
       const x = this.mapW * 0.18 + Math.random() * this.mapW * 0.78;
       const y = 24 + Math.random() * (this.mapH - 48);
 
-      // os ícones ficam ocultos pela névoa (depth mais baixo) até o jogador se aproximar
       const textObj = this.add.text(x, y, t.icon, { fontSize: '28px' })
         .setOrigin(0.5)
         .setDepth(1);
@@ -118,39 +127,75 @@ class GameScene extends Phaser.Scene {
   }
 
   // =========================================================
-  // NÉVOA — mantida como camada invisível para preservar a lógica do jogo
-  // =========================================================
-  // =========================================================
-  // NÉVOA — (SISTEMA DE TILES BASEADO NA SUA GRADE)
+  // NÉVOA — RenderTexture Direta (Sem linhas de grade!)
   // =========================================================
   createFog() {
-    // 1. Inicializa a matemática da grade AQUI (antes de dar problema)
     this.cols = Math.ceil(this.mapW / this.cfg.cellSize);
     this.rows = Math.ceil(this.mapH / this.cfg.cellSize);
-    
-    // Array lógico (o seu original) e o Novo Array Visual
+
     this.revealedGrid = new Array(this.cols * this.rows).fill(false);
-    this.fogTiles = new Array(this.cols * this.rows); 
-    
     this.revealedCount = 0;
     this.totalCells = this.cols * this.rows;
 
-    // 2. Cria os "quadradinhos" pretos cobrindo o mapa
-    for (let cy = 0; cy < this.rows; cy++) {
-      for (let cx = 0; cx < this.cols; cx++) {
-        const idx = cy * this.cols + cx;
-        const x = cx * this.cfg.cellSize;
-        const y = cy * this.cfg.cellSize;
+    this.ensureFogTextures();
 
-        // Cria um retângulo preto opaco para cada célula
-        const tile = this.add.rectangle(x, y, this.cfg.cellSize, this.cfg.cellSize, 0x000000, 1);
-        tile.setOrigin(0, 0);
-        tile.setDepth(50); // Fica acima do chão, mas abaixo do jogador (depth 60)
-        
-        this.fogTiles[idx] = tile;
-      }
+    // Carimbo do pincel radial (agora usado para criar as nuvens E apagar)
+    this.fogBrushStamp = this.make.image({ key: 'fogBrush', add: false }).setOrigin(0.5);
+
+    // 1. Cria a RenderTexture cobrindo a TELA INTEIRA
+    this.fogTexture = this.add.renderTexture(0, 0, this.mapW, this.mapH);
+    this.fogTexture.setOrigin(0, 0);
+    this.fogTexture.setDepth(50);
+
+    // 2. Preenche com a cor escura base da névoa
+    this.fogTexture.fill(0x1a2636, 0.95);
+
+    // 3. Pinta manchas orgânicas de nuvem (adeus, padrão de grade!)
+    // Calcula uma quantidade de manchas proporcional ao tamanho do mapa
+    const numClouds = Math.floor((this.mapW * this.mapH) / 8000); 
+
+    for (let i = 0; i < numClouds; i++) {
+      const cx = Phaser.Math.Between(0, this.mapW);
+      const cy = Phaser.Math.Between(0, this.mapH);
+      const scale = Phaser.Math.FloatBetween(0.8, 3.5);   // Tamanhos variados
+      const alpha = Phaser.Math.FloatBetween(0.05, 0.20); // Transparência suave
+
+      // Configura o carimbo para pintar a nuvem
+      this.fogBrushStamp.setPosition(cx, cy)
+                        .setScale(scale)
+                        .setTint(0xc9d3db) // Cor da nuvem
+                        .setAlpha(alpha);
+
+      // Desenha na textura
+      this.fogTexture.draw(this.fogBrushStamp);
+    }
+
+    // 4. IMPORTANTE: Limpa o carimbo para que ele volte a funcionar 
+    // como "borracha invisível" na hora que o jogador for andar (revealAt)
+    this.fogBrushStamp.clearTint().setAlpha(1);
+  }
+
+  ensureFogTextures() {
+    // Só precisamos do pincel radial agora. A textura quadrada (cloudTex) foi removida!
+    if (!this.textures.exists('fogBrush')) {
+      const size = 256;
+      const brush = this.textures.createCanvas('fogBrush', size, size);
+      const ctx = brush.getContext();
+      const cx = size / 2, cy = size / 2, r = size / 2;
+      
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.7, 'rgba(255,255,255,0.85)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      brush.refresh();
     }
   }
+
   revealAt(x, y) {
     const r = this.cfg.revealRadius;
     const minCx = Math.max(0, Math.floor((x - r) / this.cfg.cellSize));
@@ -158,35 +203,31 @@ class GameScene extends Phaser.Scene {
     const minCy = Math.max(0, Math.floor((y - r) / this.cfg.cellSize));
     const maxCy = Math.min(this.rows - 1, Math.floor((y + r) / this.cfg.cellSize));
 
+    let revealedSomething = false;
+
     for (let cy = minCy; cy <= maxCy; cy++) {
       for (let cx = minCx; cx <= maxCx; cx++) {
         const idx = cy * this.cols + cx;
-        
-        // Se a célula já foi revelada, ignora e pula para a próxima
         if (this.revealedGrid[idx]) continue;
-        
+
         const centerX = cx * this.cfg.cellSize + this.cfg.cellSize / 2;
         const centerY = cy * this.cfg.cellSize + this.cfg.cellSize / 2;
-        
+
         if (Phaser.Math.Distance.Between(centerX, centerY, x, y) <= r) {
-          
-          // Lógica original: marca na memória que foi revelado
           this.revealedGrid[idx] = true;
           this.revealedCount++;
-          
-          // LÓGICA VISUAL: Desaparece com o retângulo preto da tela
-          if (this.fogTiles && this.fogTiles[idx]) {
-             // O Tween dá um efeito de fade out suave de 300 milissegundos
-             this.tweens.add({
-               targets: this.fogTiles[idx],
-               alpha: 0,
-               duration: 300
-             });
-          }
+          revealedSomething = true;
         }
       }
     }
+
+    if (revealedSomething && this.fogTexture) {
+      // Apaga a névoa suavemente direto na RenderTexture
+      this.fogBrushStamp.setPosition(x, y).setScale((r * 2) / 256);
+      this.fogTexture.erase(this.fogBrushStamp);
+    }
   }
+
   // =========================================================
   // JOGADOR (explorador português)
   // =========================================================
@@ -219,7 +260,7 @@ class GameScene extends Phaser.Scene {
   }
 
   // =========================================================
-  // HUD — barra de progresso + contadores de descoberta
+  // HUD — barra de progresso + contadores
   // =========================================================
   createHud() {
     const barW = 240, barH = 18;
@@ -258,7 +299,7 @@ class GameScene extends Phaser.Scene {
   }
 
   // =========================================================
-  // DESCOBERTAS (riquezas, fauna, flora)
+  // DESCOBERTAS
   // =========================================================
   checkPoiDiscoveries() {
     this.pois.forEach(p => {
@@ -290,6 +331,135 @@ class GameScene extends Phaser.Scene {
       hold: 1400,
       onComplete: () => toast.destroy()
     });
+  }
+
+  // =========================================================
+  // FAUNA OCULTA E RE-FOGGING
+  // =========================================================
+  spawnHiddenFauna() {
+    const FAUNA_TYPES = [
+      { type: 'onca', icon: '🐆', label: 'Onça' },
+      { type: 'serpente', icon: '🐍', label: 'Serpente' }
+    ];
+
+    this.hiddenFauna = [];
+    const count = Phaser.Math.Between(this.cfg.faunaCountMin, this.cfg.faunaCountMax);
+
+    for (let i = 0; i < count; i++) {
+      let x, y, tries = 0;
+
+      do {
+        x = this.mapW * 0.18 + Math.random() * this.mapW * 0.78;
+        y = 24 + Math.random() * (this.mapH - 48);
+        tries++;
+      } while (
+        Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < this.cfg.faunaMinSpawnDist &&
+        tries < 30
+      );
+
+      const t = Phaser.Utils.Array.GetRandom(FAUNA_TYPES);
+
+      const textObj = this.add.text(x, y, t.icon, { fontSize: '26px' })
+        .setOrigin(0.5)
+        .setDepth(1)
+        .setAlpha(0.95);
+
+      this.hiddenFauna.push({
+        x, y,
+        type: t.type,
+        label: t.label,
+        triggered: false,
+        lastWarningAt: 0,
+        textObj
+      });
+    }
+  }
+
+  checkFaunaEncounters() {
+    if (!this.hiddenFauna) return;
+
+    this.hiddenFauna.forEach(f => {
+      if (f.triggered) return;
+
+      const dist = Phaser.Math.Distance.Between(f.x, f.y, this.player.x, this.player.y);
+
+      if (dist <= this.cfg.faunaCollisionRadius) {
+        this.triggerAmbush(f);
+        return;
+      }
+
+      if (dist <= this.cfg.faunaWarningRadius) {
+        this.maybeShowWarningClue(f);
+      }
+    });
+  }
+
+  maybeShowWarningClue(f) {
+    const now = this.time.now;
+    if (now - f.lastWarningAt < this.cfg.faunaWarningCooldown) return;
+    f.lastWarningAt = now;
+
+    const midX = (this.player.x + f.x) / 2;
+    const midY = (this.player.y + f.y) / 2;
+
+    const footprint = this.add.text(midX, midY, '🐾', { fontSize: '22px' })
+      .setOrigin(0.5)
+      .setDepth(55)
+      .setAlpha(0);
+
+    this.tweens.add({
+      targets: footprint,
+      alpha: 0.9,
+      duration: 250,
+      yoyo: true,
+      hold: 500,
+      onComplete: () => footprint.destroy()
+    });
+  }
+
+  triggerAmbush(f) {
+    f.triggered = true;
+
+    this.showToast(`⚠️ Cuidado! ${f.label} à vista!`);
+    this.cameras.main.shake(220, 0.006);
+
+    this.reFogArea(f.x, f.y, this.cfg.faunaRefogRadius);
+  }
+
+  reFogArea(x, y, radius) {
+    const minCx = Math.max(0, Math.floor((x - radius) / this.cfg.cellSize));
+    const maxCx = Math.min(this.cols - 1, Math.floor((x + radius) / this.cfg.cellSize));
+    const minCy = Math.max(0, Math.floor((y - radius) / this.cfg.cellSize));
+    const maxCy = Math.min(this.rows - 1, Math.floor((y + radius) / this.cfg.cellSize));
+
+    let revertedSomething = false;
+
+    for (let cy = minCy; cy <= maxCy; cy++) {
+      for (let cx = minCx; cx <= maxCx; cx++) {
+        const idx = cy * this.cols + cx;
+
+        if (!this.revealedGrid[idx]) continue;
+
+        const centerX = cx * this.cfg.cellSize + this.cfg.cellSize / 2;
+        const centerY = cy * this.cfg.cellSize + this.cfg.cellSize / 2;
+
+        if (Phaser.Math.Distance.Between(centerX, centerY, x, y) <= radius) {
+          this.revealedGrid[idx] = false;
+          this.revealedCount--;
+          revertedSomething = true;
+        }
+      }
+    }
+
+    if (revertedSomething && this.fogTexture) {
+      // Repinta a névoa de volta no lugar aplicando um tint escuro no stamp
+      this.fogBrushStamp.setPosition(x, y).setScale((radius * 2) / 256).setTint(0x1a2636);
+      this.fogTexture.draw(this.fogBrushStamp);
+      this.fogBrushStamp.clearTint(); // Limpa o tint para não afetar os próximos erase()
+    }
+
+    const pct = (this.revealedCount / this.totalCells) * 100;
+    this.updateProgressHud(pct);
   }
 
   // =========================================================
@@ -341,7 +511,6 @@ class GameScene extends Phaser.Scene {
       fontSize: '16px', color: '#000000'
     }).setOrigin(0.5).setDepth(202).setScrollFactor(0);
 
-    // TODO: quando a próxima cena existir, trocar por this.scene.start('NomeDaProximaCena')
     btnBg.on('pointerdown', () => {
       this.scene.restart();
     });
@@ -355,6 +524,8 @@ class GameScene extends Phaser.Scene {
 
     const dt = delta / 1000;
     this.movePlayer(dt);
+
+    this.checkFaunaEncounters();
 
     const moved = Phaser.Math.Distance.Between(
       this.player.x, this.player.y, this.lastRevealX, this.lastRevealY
