@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 1</title>
+</head>
+<body>
+
+    <div class="comic-container" id="comic-container">
+        
+        <a href="index.html" class="home-btn">🏠 Home</a>
+
+        <div class="comic-panel active">
+            <div class="image-wrapper">
+                <img src="../assets/cenas/.png" alt="Cena 1" class="comic-img">
+                <div class="vignette"></div>
+            </div>
+            <div class="narrative-box">
+                <div class="tag-contexto">Europa, ano de 1500</div>
+                <div class="text-scroll">
+                    <p class="narrative-text">
+                        No ano de 1500, o comércio de especiarias — cravo, canela, pimenta — vindas do Oriente movia a economia europeia. Quem controlasse as rotas marítimas controlaria uma fortuna.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="comic-panel">
+            <div class="image-wrapper">
+                <img src="../assets/cenas/.png" alt="Cena 2" class="comic-img">
+                <div class="vignette"></div>
+            </div>
+            <div class="narrative-box">
+                <div class="tag-contexto">Lisboa, início de 1500</div>
+                <div class="text-scroll">
+                    <p class="narrative-text">
+                       Em Lisboa, o Rei Dom Manuel I ordena a montagem da maior esquadra já vista: 13 navios e cerca de 1.500 homens, reunidos para consolidar o comércio com as Índias.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="comic-panel">
+            <div class="image-wrapper">
+                <img src="../assets/cenas/.png" alt="Cena 3" class="comic-img">
+                <div class="vignette"></div>
+            </div>
+            <div class="narrative-box">
+                <div class="tag-contexto">9 de março de 1500</div>
+                <div class="text-scroll">
+                    <p class="narrative-text">
+                        O comando da frota é entregue a Pedro Álvares Cabral, um nobre militar que tinha a total confiança do Rei. A partida é um grande evento, marcado por uma missa solene diante da multidão reunida no cais.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="comic-panel">
+            <div class="image-wrapper">
+                <img src="../assets/cenas/.png" alt="Cena 4" class="comic-img">
+                <div class="vignette"></div>
+            </div>
+            <div class="narrative-box">
+                <div class="tag-contexto">O planejamento da rota</div>
+                <div class="text-scroll">
+                    <p class="narrative-text">
+                        O plano original era contornar o continente africano — pelo Oceano Atlântico, dobrando o Cabo da Boa Esperança — até chegar a Calicute, na Índia.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-controls">
+            <button class="nav-btn" id="returnBtn" disabled>
+                <span class="seta">←</span><span class="Btn-legenda">Anterior</span>
+            </button>
+            <button class="nav-btn" id="nextBtn">
+                <span class="Btn-legenda">Próximo</span><span class="seta">→</span> 
+            </button>
+        </div>
+
+    </div>
+    <script>
+        //Carrega o css, permitindo o mudança dinâmica no js
+        function carregarCss(href) {
+            const existente = document.querySelector(`link[href="${href}"]`);
+            if (existente) return existente;
+
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            document.head.appendChild(link);
+            return link;
+        }
+        const estilo = carregarCss('style.css');
+        console.log('css careegado', estilo.href)
+
+        const panels = document.querySelectorAll('.comic-panel');
+        const returnBtn = document.getElementById('returnBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        let currentIndex = 0;
+
+        const DESTINATION_URL = '../minigame-cap8/minigame-cap8.html'; 
+
+        function updatePanels() {
+            // Alterna a classe ativa
+            panels.forEach(panel => panel.classList.remove('active'));
+            panels[currentIndex].classList.add('active');
+
+            // Desabilita e esconde o botão anterior
+            returnBtn.disabled = currentIndex === 0;
+            returnBtn.style.display = currentIndex === 0 ? 'none' : 'inline-flex';
+
+            // Botão dinâmico em diferentes telas
+            const nextLegenda = nextBtn.querySelector('.Btn-legenda');
+            const nextSeta = nextBtn.querySelector('.seta');
+
+            // Gerencia botão próximo / Ir para o minigame
+            if (currentIndex === panels.length - 1) {
+                nextLegenda.textContent = 'Iniciar expedição';
+                nextSeta.textContent = '🎮';
+                nextBtn.style.backgroundColor = '#4caf50'; // Verde para indicar conclusão
+                nextBtn.style.color = '#ffffff';
+            } else {
+                nextLegenda.textContent = 'Próximo';
+                nextSeta.textContent = '→';
+                nextBtn.style.backgroundColor = '#ffeb3b'; // Amarelo padrão
+                nextBtn.style.color = '#000000';
+            }
+        }
+
+        //Avança para o próximo quadro
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < panels.length - 1) {
+                currentIndex++;
+                updatePanels();
+            } else {
+                window.location.href = DESTINATION_URL;
+            }
+        });
+
+        //Retorna para o quadro anterior
+        returnBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updatePanels();
+            }
+        });
+        
+        // Inicialização
+        updatePanels();
+    </script>
+</body>
+</html>
