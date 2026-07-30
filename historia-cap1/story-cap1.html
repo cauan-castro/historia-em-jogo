@@ -101,7 +101,8 @@
         const nextBtn = document.getElementById('nextBtn');
         let currentIndex = 0;
 
-        const DESTINATION_URL = '../minigame-cap8/minigame-cap8.html'; 
+        //coloque a url do minigame nas aspas simples abaixo
+        const DESTINATION_URL = '../'; 
 
         function updatePanels() {
             // Alterna a classe ativa
@@ -118,8 +119,8 @@
 
             // Gerencia botão próximo / Ir para o minigame
             if (currentIndex === panels.length - 1) {
-                nextLegenda.textContent = 'Iniciar expedição';
-                nextSeta.textContent = '🎮';
+                nextLegenda.textContent = 'Iniciar travessia';
+                nextSeta.textContent = '⛵​';
                 nextBtn.style.backgroundColor = '#4caf50'; // Verde para indicar conclusão
                 nextBtn.style.color = '#ffffff';
             } else {
